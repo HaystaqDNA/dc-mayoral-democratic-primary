@@ -12,6 +12,7 @@
 
     <link href="/assets/bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/assets/css/main.css" rel="stylesheet">
+    <link href="/assets/css/dc-visualizations.css" rel="stylesheet">
 
     <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -24,10 +25,11 @@
     <div class="container">
 
       <div class="page-header">
-        <h1>D.C. Mayoral Democratic Primary</h1>
+        <h1>Registered voters in Washington, DC</h1>
+        <h3 class="text-muted">Pie size represents total registered voters</h3>
       </div>
 
-      <div class="map"></div>
+      <div id="viz"></div>
 
       <div class="footer">
         <p>&copy; <a href="http://haystaqdna.com/">HaystaqDNA</a> 2014</p>
@@ -38,5 +40,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script src="/assets/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="/assets/bower_components/d3/d3.min.js"></script>
+    <script src="/assets/bower_components/topojson/topojson.js"></script>
+    <script src="/assets/js/registered-voters.js"></script>
   </body>
 </html>
