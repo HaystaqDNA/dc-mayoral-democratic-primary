@@ -13,31 +13,18 @@ var projection = d3.geo.albers();
 
 var path = d3.geo.path()
     .projection(projection);
-    
-//this is the line to update for a new color scale
+
 var color = d3.scale.ordinal()
     .range(["#5555CC",  "#CC5555", "#cccccc"]);
 
-
-var makeArc = function(r) {return (d3.svg.arc()
-    .outerRadius(r - 10)
-    .innerRadius(0))};
+var radius = d3.scale.linear()
+    .range([0, 80]);
 
 var pie = d3.layout.pie()
     .sort(null)
     .value(function(d) { return d.value; });
-    
 
-var radiusScale = function(maxRadius) {
-    var s = d3.scale.linear();
-    s.domain([0, maxRadius]);
-    s.range([10,70]);
-    return s;
-    }
-    
 d3.json("/assets/data/registered-voters-dc.json", function(error, json) {
-
-
   var wards = topojson.feature(json, json.objects["dc-wards"]);
 
   // Initialize a null projection, derive the optimal scale and translate
@@ -65,56 +52,44 @@ d3.json("/assets/data/registered-voters-dc.json", function(error, json) {
   // Prepare data to populate the pie charts.
   color.domain(d3.keys(wards.features[0].properties.values));
 
- 
   wards.features.forEach(function(d) {
     d.data = color.domain().map(function(field) {
       return { field: field, value: d.properties.values[field] };
     });
   });
-  
 
-  //create scale for pie chart size
-  var maxRadius = 0;
-  wards.features.forEach(function(d) {
-    if (d.properties.c > maxRadius) {
-        maxRadius = d.properties.c;
-    }
-    return maxRadius;});
-
-  var rScale = radiusScale(maxRadius);
-    
+  radius.domain([0, d3.max(wards.features, function(d) { return d.properties.c; })]);
 
   //loop over wards - need to do this outside the svg in order to access
   //the radius size and adjust the pie chart radii separately.
-  wards.features.forEach( function(feat) {
-  
-  var id = feat.id
-  var radius = feat.properties.c
-  var arc = makeArc(rScale(radius));
+  wards.features.forEach(function(feat) {
+    var r = feat.properties.c,
+        arc = d3.svg.arc()
+              .outerRadius(radius(r) - 10)
+              .innerRadius(0);
 
-    //create empty pie charts
-  var pies = svg.selectAll(".pie".concat(id))
-      .data([feat])
-    .enter().append("g")
-      .attr("class", "pie".concat(id))
-      .attr("width", radius * 2)
-      .attr("height", radius * 2)
-    .append("g")
-      .attr("transform", function(d) { return "translate(" + path.centroid(d) + ")"; });
-      
-    // Populate pie charts.
-  pies.selectAll(".arc".concat(id))
-      .data(function(d) {return pie(d.data);})
-    .enter().append("path")
-      .attr("class", "arc".concat(id))
-      .attr("d", arc)
-      .attr("id", "pie-chunk")
-      .style("fill", function(d) { return color(d.data.field); });
+    // Create empty pie chart.
+    var pies = svg.selectAll(".pie")
+        .data([feat])
+      .enter().append("g")
+        .attr("width", r * 2)
+        .attr("height", r * 2)
+      .append("g")
+        .attr("transform", function(d) { return "translate(" + path.centroid(d) + ")"; });
 
-      //create tooltips
-  pies.selectAll(".arc".concat(id)).append("title")
-      .text(function(d, i) { return "Ward " + id + " " + d.data.field + ": " + comma(d.data.value); });
-});
+    // Populate pie chart.
+    pies.selectAll(".arc")
+        .data(function(d) { return pie(d.data); })
+      .enter().append("path")
+        .attr("class", "arc")
+        .attr("d", arc)
+        .style("fill", function(d) { return color(d.data.field); });
+
+    // Create tooltip.
+    pies.selectAll(".arc").append("title")
+        .text(function(d) { return "Ward " + feat.id + " " + d.data.field + ": " + comma(d.data.value); });
+  });
+
   // Create the legend.
   var legend = svg.append("g")
       .attr("class", "legend")
@@ -125,20 +100,16 @@ d3.json("/assets/data/registered-voters-dc.json", function(error, json) {
     .enter().append("g")
       .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
 
-      //legend color boxes
+  // Create the legend color boxes.
   legend.append("rect")
       .attr("width", 18)
       .attr("height", 18)
       .style("fill", color);
 
-    //legend text
+  // Create the legend text.
   legend.append("text")
       .attr("x", 24)
       .attr("y", 9)
       .attr("dy", ".35em")
-      .text(function(d, i) {
-        var text = color.domain()[i];
-        return text;
-      });
+      .text(function(d, i) { return color.domain()[i]; });
 });
-
